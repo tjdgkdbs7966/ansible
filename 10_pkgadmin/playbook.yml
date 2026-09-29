@@ -1,0 +1,39 @@
+---
+- name: 레포지토리 구성
+  hosts: servers
+  vars:
+    custom_pkg1: bsc
+    custom_pkg2: msmsms
+  tasks:
+    - name: 패키지 팩트 수집
+      ansible.builtin.package_facts:
+    
+    - name: 사용자 패키지를 위한 패키지 팩트 출력
+      ansible.builtin.debug:
+        msg: "[  OK  ] 사용자 패키지: {{ custom_pkg1 }}, {{ custom_pkg2 }}" 
+      when: 
+        - custom_pkg1 in ansible_facts["packages"]
+        - custom_pkg2 in ansible_facts["packages"]
+
+    - name: RPM Repo 구성
+      ansible.builtin.yum_repository:
+        file: example
+        name: examplerepo
+        description: Example Inc. Internal repo
+        baseurl: http://192.168.10.10/repo
+        enabled: true
+        gpgcheck: true
+        #gpgkey: http://192.168.10.10/repo/RPM-GPG-KEY-test
+        
+    - name: GPG 키 가져오기
+      ansible.builtin.rpm_key:
+        key: http://192.168.10.10/repo/RPM-GPG-KEY-test
+        state: present
+
+    - name: 패키지 추가
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - "{{ custom_pkg1 }}"
+        - "{{ custom_pkg2 }}"

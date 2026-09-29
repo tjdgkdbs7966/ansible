@@ -1,0 +1,41 @@
+---
+########################
+# 1. 레포지토리 구성
+#  * http://192.168.10.10/repo
+# 2. 패키지 설치
+#   * bsc, msmsms
+########################
+- name: 레포지토리 구성 예제
+  hosts: servers
+  vars:
+    pkg_bsc: bsc
+    pkg_ms: msmsms
+  tasks:
+    - name: 1) 레포지토리 구성
+      ansible.builtin.yum_repository:
+        file: example
+        name: examplerepo
+        description: Example Repo
+        baseurl: http://192.168.10.10/repo
+        gpgcheck: false
+
+    - name: 2) 패키지 설치
+      ansible.builtin.dnf:
+        name:
+          - msmsms
+          - bsc
+        state: present
+
+    - name: 3) 패키지 정보 수집
+      ansible.builtin.package_facts:
+
+    - name: 4) 패키지 설치 확인
+      ansible.builtin.debug:
+        msg: "[  OK  ] 패키지 존재"
+      when:
+        - pkg_bsc in ansible_facts["packages"]
+        - pkg_ms in ansible_facts["packages"]
+
+    - name: 5) 수집된 패키지 목록 확인
+      ansible.builtin.debug:
+        var: ansible_facts.packages

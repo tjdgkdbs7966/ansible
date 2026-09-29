@@ -1,0 +1,41 @@
+---
+- name: Restore playbook.yml
+  hosts: all
+  vars_files:
+    - vars/vars.yml
+  tasks:
+  # 1) 방화벽 제거 - http, https
+  - name: 1) 방화벽 서비스 제거
+    ansible.posix.firewalld:
+      service: "{{ item }}"
+      state: disabled
+      permanent: true
+      immediate: true
+    loop:
+      - "{{ fw_80 }}"
+      - "{{ fw_8080 }}"
+
+  # 2) 웹 서비스 중지 - httpd, firewalld
+  - name: "2) 웹 서비스 중지 - {{ svc_web }}, {{ svc_fw }}"
+    ansible.builtin.systemd_service:
+      name: "{{ item }}"
+      state: stopped
+      enabled: false
+    loop:
+      - "{{ svc_web }}"
+      - "{{ svc_fw }}"
+
+  # 3) 웹 서비스 설정 삭제
+  - name: 3) 웹서비스 설정 삭제
+    ansible.builtin.file:
+      path: "{{ inx_dest }}"
+      state: absent
+
+  # 4) 웹 패키지 삭제 - httpd, mod_ssl, firewalld
+  - name: "4) 웹 패키지 삭제 - {{ pkg_http }}, {{ pkg_https }}, {{ pkg_fw }}"
+    ansible.builtin.dnf:
+      name:
+        - "{{ pkg_http }}"
+        - "{{ pkg_https }}"
+        - "{{ pkg_fw }}"
+      state: absent

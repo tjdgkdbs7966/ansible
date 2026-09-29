@@ -1,0 +1,56 @@
+---
+   ###################################
+    # 1) 방화벽에 포트 제거 
+    # 2) 서비스 종료
+    # 3) 서비스 설정 삭제
+    # 4) 패키지 삭제 
+    ###################################
+    # 1) 방화벽 포트 제거
+    # * http, https, mysql
+  - name: Reestore web-db.yml
+    hosts: all
+    tasks:
+      - name: 1) 방화멱 포트 제거 
+        ansible.posix.firewalld:
+          service: "{{ item }}"
+          permanent: true
+          immediate: true
+          state: disabled
+        loop:
+          - http
+          - https
+          - mysql
+       # 2) 서비스 종료
+      - name: 2) 서비스 종료
+        ansible.builtin.systemd_service:
+          name: "{{ item }}"
+          state: stopped
+          enabled: false
+        loop:
+          - httpd
+          - mariadb
+
+      # 3) 서비스 설정 삭제
+      # 4) 패키지 삭제 
+      - name: 3) 서비스 설정 삭제
+        ansible.builtin.file:
+          path: /var/www/html/index.php
+          state: absent
+
+
+      - name: 4) 패키지 삭제 
+        ansible.builtin.dnf:
+          name: 
+            - http
+            - mod_ssl
+            - php
+            - php-mysqlnd
+            - python3-PyMySQL
+            - php-pdo
+            - mariadb
+            - mariadb-service
+            - mariadb-command-c-config
+            - mariadb-command
+            - mariadb-connector-c
+            - mariadb-errmsg 
+          state: absent

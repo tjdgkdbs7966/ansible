@@ -1,0 +1,32 @@
+---
+- name: Restore intranet.yml
+  hosts: all
+  become: true             # <--- root 권한 적용
+
+  tasks:
+    # 1) 방화벽에서 http 서비스 제거
+    - name: 1) 방화벽 규칙 삭제 - http
+      ansible.posix.firewalld:
+        service: http
+        state: disabled
+        permanent: true
+        immediate: true
+
+    # 2) httpd 웹서버 서비스 중지 및 비활성화
+    - name: 2) 서비스 중지 - httpd
+      ansible.builtin.systemd_service:
+        name: httpd
+        state: stopped
+        enabled: false   
+
+    # 3) 생성했던 index.html 파일 삭제 (file 모듈 사용)
+    - name: 3) index.html 파일 삭제
+      ansible.builtin.file:
+        path: /var/www/html/index.html
+        state: absent
+
+    # 4) httpd 패키지 삭제
+    - name: 4) 패키지 삭제 - httpd
+      ansible.builtin.dnf:
+        name: httpd
+        state: absent
